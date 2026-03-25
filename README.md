@@ -7,4 +7,4 @@ Maestría en Ciencia de Datos · Docente: Jorge I. Padilla-Buriticá · Período
 - Karen Melissa Gómez Montoya
 - Juan Esteban Estrada Herrera
 
----
+
