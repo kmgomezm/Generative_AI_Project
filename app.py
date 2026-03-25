@@ -190,35 +190,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── Audio recorder component (HTML + JS via st.components) ───────────────────
-def audio_recorder_component() -> bytes | None:
-    """
-    Renders a WhatsApp-style mic button using st.components.v1.html.
-    Returns raw WAV bytes when the user stops recording, else None.
-    Uses a query-param trick: recorded base64 audio is posted back via
-    streamlit's setComponentValue mechanism embedded in the HTML.
-    We use streamlit-audiorecorder if available, fallback to file upload.
-    """
-    try:
-        from audiorecorder import audiorecorder
-        audio = audiorecorder(
-            start_prompt="",
-            stop_prompt="",
-            pause_prompt="",
-            show_visualizer=True,
-            key="recorder",
-        )
-        if len(audio) > 0:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                audio.export(tmp.name, format="wav")
-                with open(tmp.name, "rb") as f:
-                    data = f.read()
-                os.unlink(tmp.name)
-            return data
-        return None
-    except Exception:
-        return None
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -285,15 +256,16 @@ def ask_groq(groq_client, system_prompt: str, user_prompt: str) -> str:
 
 
 def generate_tts_audio(groq_client, text: str) -> bytes:
-    """Generate speech from text using Groq TTS (PlayAI voices)."""
-    # Strip markdown for cleaner TTS
+    """Generate speech from text using Groq Orpheus TTS."""
     import re
-    clean = re.sub(r'[#*`_~]', '', text)
-    clean = re.sub(r'\n+', ' ', clean).strip()
+    # Strip markdown symbols for cleaner audio
+    clean = re.sub(r'[#*`_~•]', '', text)
+    clean = re.sub(r'\n+', '. ', clean)
+    clean = re.sub(r'\s+', ' ', clean).strip()
     response = groq_client.audio.speech.create(
-        model="playai-tts",
-        voice="Celeste-PlayAI",   # clear, neutral Spanish-capable voice
-        input=clean[:4000],        # API limit
+        model="canopylabs/orpheus-v1-english",
+        voice="jessica",   # clear voice, suitable for study summaries
+        input=clean[:4000],
         response_format="wav",
     )
     return response.read()
@@ -495,37 +467,29 @@ with col_in:
     # ── Step 2: Question (recorder + upload + text) ───────────────────────────
     st.markdown('<div class="step-badge">🎙️ Paso 2 — Tu pregunta</div>', unsafe_allow_html=True)
 
-    # Try audiorecorder widget (WhatsApp-style)
-    recorder_available = False
-    try:
-        from audiorecorder import audiorecorder
-        recorder_available = True
-    except ImportError:
-        pass
-
+    # ── Recorder (audio-recorder-streamlit — no ffmpeg needed, pure JS) ─────────
     recorded_bytes = None
-    if recorder_available:
-        st.markdown("**Graba tu pregunta** (mantén el botón del micrófono):")
+    try:
+        from audio_recorder_streamlit import audio_recorder
+        st.markdown("**🎙️ Graba tu pregunta** — presiona el micrófono para iniciar y de nuevo para detener:")
         st.markdown('<div class="recorder-wrap">', unsafe_allow_html=True)
-        from audiorecorder import audiorecorder
-        audio_seg = audiorecorder(
-            start_prompt="⏺ Grabar",
-            stop_prompt="⏹ Detener",
-            pause_prompt="",
-            show_visualizer=True,
-            key="recorder",
+        rec = audio_recorder(
+            text="",
+            recording_color="#7c6af7",
+            neutral_color="#a78bfa",
+            icon_name="microphone",
+            icon_size="2x",
+            pause_threshold=3.0,
+            key="mic_recorder",
         )
         st.markdown('</div>', unsafe_allow_html=True)
-        if len(audio_seg) > 0:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                audio_seg.export(tmp.name, format="wav")
-                with open(tmp.name, "rb") as f:
-                    recorded_bytes = f.read()
-                os.unlink(tmp.name)
-            st.markdown('<span class="tag-ok">✓ Audio grabado</span>', unsafe_allow_html=True)
-        st.markdown("— o sube un archivo —")
-    else:
-        st.caption("💡 *Para grabación en vivo instala `audiorecorder` (ver requirements). Por ahora sube un archivo:*")
+        if rec is not None and len(rec) > 0:
+            recorded_bytes = rec
+            st.audio(recorded_bytes, format="audio/wav")
+            st.markdown('<span class="tag-ok">✓ Audio listo para enviar</span>', unsafe_allow_html=True)
+    except Exception as e:
+        st.caption(f"⚠️ Grabación en vivo no disponible ({e}). Sube un archivo:")
+    st.markdown("— o sube un archivo de audio —")
 
     uploaded_audio = st.file_uploader(
         "Nota de voz (mp3, wav, m4a, ogg, webm, flac)",
