@@ -1,4 +1,5 @@
-# Generative_AI_Project
+# Generative AI Project – QuickStudy Assistant
+
 Maestría en Ciencia de Datos · Docente: Jorge I. Padilla-Buriticá · Período 2026-1
 *Final workshop for Introduction to AI.*
 
@@ -8,8 +9,6 @@ Maestría en Ciencia de Datos · Docente: Jorge I. Padilla-Buriticá · Período
 - Juan Esteban Estrada Herrera
 
 **Nota**: El modelo gratuito de Groq de Text to Speech tiene un límite de tokens, se acaba pronto y se resetea a la hora.
-
-# Generative AI Project – QuickStudy Assistant
 
 ## Descripción
 
