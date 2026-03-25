@@ -1,6 +1,7 @@
 import streamlit as st
 import tempfile
 import os
+import base64
 from pathlib import Path
 
 # ─── Page Config ──────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ st.markdown("""
     --text:    #e8e9f0;
     --muted:   #8b8fa8;
     --success: #34d399;
+    --error:   #f87171;
     --border:  rgba(124,106,247,0.2);
 }
 
@@ -37,25 +39,27 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
 
-.hero { text-align:center; padding:2rem 1rem 1rem; }
+/* Hero */
+.hero { text-align:center; padding:1.8rem 1rem 0.8rem; }
 .hero-title {
-    font-family:'Syne',sans-serif; font-size:2.8rem; font-weight:800;
+    font-family:'Syne',sans-serif; font-size:2.6rem; font-weight:800;
     background:linear-gradient(135deg,#7c6af7,#a78bfa,#c4b5fd);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    background-clip:text; line-height:1.1; margin-bottom:0.4rem;
+    background-clip:text; line-height:1.1; margin-bottom:0.3rem;
 }
-.hero-sub { font-size:1rem; color:var(--muted); font-weight:300; }
+.hero-sub { font-size:0.95rem; color:var(--muted); font-weight:300; }
 
+/* Badges */
 .step-badge {
     display:inline-flex; align-items:center; gap:0.4rem;
     background:var(--surface2); border:1px solid var(--border);
     border-radius:2rem; padding:0.3rem 0.9rem;
-    font-size:0.78rem; font-weight:600; color:var(--accent2);
+    font-size:0.76rem; font-weight:600; color:var(--accent2);
     font-family:'Syne',sans-serif; letter-spacing:0.05em;
     text-transform:uppercase; margin-bottom:0.6rem;
 }
 
-/* inputs */
+/* Inputs */
 .stFileUploader > div {
     background:var(--surface2) !important;
     border:1.5px dashed var(--accent) !important;
@@ -69,50 +73,151 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     font-family:'DM Sans',sans-serif !important;
 }
 .stTextInput input:focus, .stTextArea textarea:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px rgba(124,106,247,0.25) !important;
+    border-color:var(--accent) !important;
+    box-shadow:0 0 0 2px rgba(124,106,247,0.25) !important;
 }
 
-/* button */
+/* Main button */
 .stButton > button {
     background:linear-gradient(135deg,#7c6af7,#a78bfa) !important;
     color:white !important; border:none !important;
     border-radius:0.6rem !important;
     font-family:'Syne',sans-serif !important; font-weight:700 !important;
-    font-size:0.95rem !important; padding:0.65rem 1.5rem !important;
+    font-size:0.92rem !important; padding:0.6rem 1.2rem !important;
     letter-spacing:0.03em !important; width:100%;
 }
-.stButton > button:disabled { opacity:0.4 !important; cursor:not-allowed !important; }
+.stButton > button:disabled { opacity:0.35 !important; }
 
-/* result boxes */
+/* Result boxes */
 .result-box {
     background:var(--surface2); border-left:3px solid var(--accent);
     border-radius:0 0.75rem 0.75rem 0;
-    padding:1.25rem 1.5rem; margin-bottom:1rem; line-height:1.7;
+    padding:1.1rem 1.4rem; margin-bottom:0.9rem; line-height:1.7;
 }
 .result-box h4 {
     font-family:'Syne',sans-serif; color:var(--accent2);
-    font-size:0.82rem; text-transform:uppercase;
-    letter-spacing:0.08em; margin-bottom:0.5rem;
+    font-size:0.8rem; text-transform:uppercase;
+    letter-spacing:0.08em; margin-bottom:0.45rem;
 }
 
-/* tags */
-.tag-ok   { background:#1a3a2e; color:#34d399; border:1px solid #34d399; border-radius:0.4rem; padding:0.2rem 0.6rem; font-size:0.78rem; font-weight:600; display:inline-block; margin:0.15rem 0.2rem; }
-.tag-warn { background:#3a2e1a; color:#fbbf24; border:1px solid rgba(251,191,36,0.5); border-radius:0.4rem; padding:0.25rem 0.75rem; font-size:0.8rem; display:inline-block; }
+/* Quiz cards */
+.quiz-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:0.85rem; padding:1rem 1.2rem; margin-bottom:0.8rem;
+}
+.quiz-num {
+    font-family:'Syne',sans-serif; font-size:0.72rem;
+    color:var(--accent2); text-transform:uppercase; letter-spacing:0.07em;
+    margin-bottom:0.3rem;
+}
+.quiz-q { font-weight:500; font-size:0.97rem; margin-bottom:0.6rem; }
+
+/* Feedback boxes */
+.fb-correct {
+    background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.4);
+    border-radius:0.6rem; padding:0.7rem 1rem; margin-top:0.5rem;
+    color:#34d399; font-size:0.88rem; line-height:1.6;
+}
+.fb-wrong {
+    background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.35);
+    border-radius:0.6rem; padding:0.7rem 1rem; margin-top:0.5rem;
+    color:#fca5a5; font-size:0.88rem; line-height:1.6;
+}
+.fb-partial {
+    background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.35);
+    border-radius:0.6rem; padding:0.7rem 1rem; margin-top:0.5rem;
+    color:#fde68a; font-size:0.88rem; line-height:1.6;
+}
+
+/* Score bar */
+.score-bar-wrap {
+    background:var(--surface2); border-radius:0.5rem;
+    height:10px; margin:0.5rem 0; overflow:hidden;
+}
+.score-bar-fill {
+    height:100%; border-radius:0.5rem;
+    background:linear-gradient(90deg,#7c6af7,#34d399);
+    transition:width 0.6s ease;
+}
+
+/* Tags */
+.tag-ok   { background:#1a3a2e;color:#34d399;border:1px solid #34d399;border-radius:0.4rem;padding:0.18rem 0.55rem;font-size:0.76rem;font-weight:600;display:inline-block;margin:0.12rem 0.15rem; }
+.tag-warn { background:#3a2e1a;color:#fbbf24;border:1px solid rgba(251,191,36,0.5);border-radius:0.4rem;padding:0.22rem 0.65rem;font-size:0.78rem;display:inline-block; }
 
 .limit-banner {
-    background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3);
-    border-radius:0.6rem; padding:0.5rem 0.9rem;
-    font-size:0.8rem; color:#fbbf24; margin-bottom:0.75rem;
+    background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);
+    border-radius:0.6rem;padding:0.45rem 0.85rem;
+    font-size:0.78rem;color:#fbbf24;margin-bottom:0.7rem;
 }
 .api-banner {
-    background:rgba(124,106,247,0.08); border:1px solid rgba(124,106,247,0.3);
-    border-radius:0.6rem; padding:0.5rem 0.9rem;
-    font-size:0.8rem; color:var(--accent2); margin-bottom:0.5rem;
+    background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.3);
+    border-radius:0.6rem;padding:0.45rem 0.85rem;
+    font-size:0.78rem;color:var(--accent2);margin-bottom:0.5rem;
 }
-.divider { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
+.divider { border:none;border-top:1px solid var(--border);margin:1.1rem 0; }
+.tts-banner {
+    background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.25);
+    border-radius:0.6rem;padding:0.45rem 0.85rem;
+    font-size:0.78rem;color:#34d399;margin-bottom:0.5rem;
+}
+
+/* Recorder widget area */
+.recorder-wrap {
+    background:var(--surface2); border:1.5px solid var(--border);
+    border-radius:0.85rem; padding:1rem; text-align:center;
+    margin-bottom:0.75rem;
+}
+
+/* Tab styling */
+.stTabs [data-baseweb="tab-list"] {
+    background:var(--surface2) !important;
+    border-radius:0.7rem !important;
+    padding:0.2rem !important;
+    gap:0.2rem !important;
+}
+.stTabs [data-baseweb="tab"] {
+    background:transparent !important;
+    color:var(--muted) !important;
+    border-radius:0.5rem !important;
+    font-family:'Syne',sans-serif !important;
+    font-size:0.82rem !important;
+    font-weight:600 !important;
+}
+.stTabs [aria-selected="true"] {
+    background:var(--accent) !important;
+    color:white !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
+# ─── Audio recorder component (HTML + JS via st.components) ───────────────────
+def audio_recorder_component() -> bytes | None:
+    """
+    Renders a WhatsApp-style mic button using st.components.v1.html.
+    Returns raw WAV bytes when the user stops recording, else None.
+    Uses a query-param trick: recorded base64 audio is posted back via
+    streamlit's setComponentValue mechanism embedded in the HTML.
+    We use streamlit-audiorecorder if available, fallback to file upload.
+    """
+    try:
+        from audiorecorder import audiorecorder
+        audio = audiorecorder(
+            start_prompt="",
+            stop_prompt="",
+            pause_prompt="",
+            show_visualizer=True,
+            key="recorder",
+        )
+        if len(audio) > 0:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                audio.export(tmp.name, format="wav")
+                with open(tmp.name, "rb") as f:
+                    data = f.read()
+                os.unlink(tmp.name)
+            return data
+        return None
+    except Exception:
+        return None
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -136,7 +241,6 @@ def build_faiss_index(text: str):
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     from langchain_community.vectorstores import FAISS
     from langchain_huggingface import HuggingFaceEmbeddings
-
     splitter = RecursiveCharacterTextSplitter(chunk_size=600, chunk_overlap=80)
     chunks = splitter.create_documents([text])
     embeddings = HuggingFaceEmbeddings(
@@ -180,6 +284,67 @@ def ask_groq(groq_client, system_prompt: str, user_prompt: str) -> str:
     return response.choices[0].message.content
 
 
+def generate_tts_audio(groq_client, text: str) -> bytes:
+    """Generate speech from text using Groq TTS (PlayAI voices)."""
+    # Strip markdown for cleaner TTS
+    import re
+    clean = re.sub(r'[#*`_~]', '', text)
+    clean = re.sub(r'\n+', ' ', clean).strip()
+    response = groq_client.audio.speech.create(
+        model="playai-tts",
+        voice="Celeste-PlayAI",   # clear, neutral Spanish-capable voice
+        input=clean[:4000],        # API limit
+        response_format="wav",
+    )
+    return response.read()
+
+
+def play_audio_bytes(audio_bytes: bytes, label: str = "🔊 Escuchar resumen"):
+    """Embed audio player inline."""
+    b64 = base64.b64encode(audio_bytes).decode()
+    st.markdown(
+        f"""
+        <div class="tts-banner">
+            {label} ↓
+        </div>
+        <audio controls style="width:100%;border-radius:0.6rem;margin-bottom:0.5rem;">
+            <source src="data:audio/wav;base64,{b64}" type="audio/wav">
+        </audio>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def parse_quiz(answer_md: str) -> tuple[str, list[dict]]:
+    """
+    Parse LLM output into (summary_text, list_of_questions).
+    Each question dict: {num, question, answer}
+    """
+    summary = ""
+    questions = []
+
+    if "### 📌 Resumen" in answer_md and "### ❓ Cuestionario rápido" in answer_md:
+        parts = answer_md.split("### ❓ Cuestionario rápido")
+        summary = parts[0].replace("### 📌 Resumen", "").strip()
+        quiz_raw = parts[1].strip() if len(parts) > 1 else ""
+    else:
+        return answer_md, []
+
+    # Parse P1/R1 pairs robustly
+    import re
+    # Match **P1:** ... **R:** ...
+    blocks = re.split(r'\*\*P\d+:\*\*', quiz_raw)
+    for i, block in enumerate(blocks[1:], start=1):
+        # Split on **R:**
+        sub = re.split(r'\*\*R:\*\*', block, maxsplit=1)
+        q_text = sub[0].strip().rstrip(':').strip()
+        a_text = sub[1].strip().split('\n')[0].strip() if len(sub) > 1 else ""
+        if q_text:
+            questions.append({"num": i, "question": q_text, "answer": a_text})
+
+    return summary, questions
+
+
 SYSTEM_STUDY = """Eres QuickStudy, un asistente de estudio experto y conciso.
 Respondes SIEMPRE en el mismo idioma de la pregunta del usuario.
 Recibes fragmentos de un documento y una pregunta del alumno.
@@ -191,9 +356,28 @@ Tu respuesta tiene DOS partes con estos títulos exactos:
 ### ❓ Cuestionario rápido
 (Exactamente 3 preguntas con respuestas:
 **P1:** pregunta
+**R:** respuesta breve
+**P2:** pregunta
+**R:** respuesta breve
+**P3:** pregunta
 **R:** respuesta breve)
 
 Solo usa la información del contexto. Si no hay suficiente, indícalo.
+"""
+
+SYSTEM_GRADER = """Eres un tutor académico que evalúa respuestas de estudiantes con empatía y precisión.
+Se te da:
+- La pregunta original
+- La respuesta correcta de referencia
+- La respuesta del estudiante
+
+Evalúa si el estudiante respondió correctamente. Sé justo: no se exige literalidad, solo que la idea sea correcta.
+
+Responde en el mismo idioma del estudiante. Tu respuesta tiene este formato exacto:
+
+VEREDICTO: [CORRECTO / PARCIAL / INCORRECTO]
+EXPLICACIÓN: (1-2 oraciones: di qué estuvo bien, qué faltó o qué fue incorrecto)
+CONSEJO: (1 oración: cómo mejorar o qué repasar)
 """
 
 MAX_FILES     = 5
@@ -202,11 +386,16 @@ WARN_MB_TOTAL = 50
 
 # ─── Session State ────────────────────────────────────────────────────────────
 for _k, _v in [
-    ("faiss_index",   None),
-    ("pdf_key",       ""),
-    ("result",        None),
-    ("transcription", None),
-    ("groq_api_key",  ""),
+    ("faiss_index",     None),
+    ("pdf_key",         ""),
+    ("result",          None),
+    ("transcription",   None),
+    ("groq_api_key",    ""),
+    ("summary_text",    ""),
+    ("quiz_questions",  []),
+    ("quiz_answers",    {}),    # {q_num: user_answer_text}
+    ("quiz_feedback",   {}),    # {q_num: {verdict, explanation, tip}}
+    ("summary_audio",   None),  # bytes
 ]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
@@ -216,12 +405,12 @@ for _k, _v in [
 st.markdown("""
 <div class="hero">
     <div class="hero-title">QuickStudy Assistant</div>
-    <div class="hero-sub">Sube tus apuntes · Pregunta por voz o texto · Recibe resumen + cuestionario</div>
+    <div class="hero-sub">PDF → Pregunta por voz o texto → Resumen · Audio · Cuestionario interactivo</div>
 </div>
 """, unsafe_allow_html=True)
 
-# ─── API Key (TOP LEVEL — always visible) ─────────────────────────────────────
-st.markdown('<div class="api-banner">🔑 <strong>Paso 0:</strong> Ingresa tu Groq API Key para comenzar — <a href="https://console.groq.com" target="_blank" style="color:var(--accent2);">console.groq.com</a> (capa gratuita)</div>', unsafe_allow_html=True)
+# ─── API Key ──────────────────────────────────────────────────────────────────
+st.markdown('<div class="api-banner">🔑 <strong>Paso 0 — Groq API Key</strong> (gratuita en <a href="https://console.groq.com" target="_blank" style="color:var(--accent2);">console.groq.com</a>)</div>', unsafe_allow_html=True)
 
 api_input = st.text_input(
     "Groq API Key",
@@ -230,43 +419,32 @@ api_input = st.text_input(
     value=st.session_state.groq_api_key,
     label_visibility="collapsed",
 )
-# Persist in session so it survives reruns triggered by other widgets
 if api_input:
     st.session_state.groq_api_key = api_input
-
 groq_api_key = st.session_state.groq_api_key
 
 if groq_api_key:
-    st.markdown('<span class="tag-ok">✓ API Key ingresada</span>', unsafe_allow_html=True)
-else:
-    st.caption("⚠️ Sin API Key el botón de análisis no funcionará.")
+    st.markdown('<span class="tag-ok">✓ API Key lista</span>', unsafe_allow_html=True)
 
 st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-# ─── Columns ──────────────────────────────────────────────────────────────────
-col1, col2 = st.columns([1, 1], gap="large")
+# ─── Main Layout ──────────────────────────────────────────────────────────────
+col_in, col_out = st.columns([1, 1], gap="large")
 
 # ══ LEFT: Inputs ══════════════════════════════════════════════════════════════
-with col1:
+with col_in:
 
     # ── Step 1: PDFs ──────────────────────────────────────────────────────────
     st.markdown('<div class="step-badge">📄 Paso 1 — Documentos PDF</div>', unsafe_allow_html=True)
-    st.markdown(f"""
-<div class="limit-banner">
-    ⚠️ Máx. <strong>{MAX_FILES} archivos</strong> · <strong>{MAX_MB_EACH} MB por archivo</strong>
-    (límite de Streamlit Cloud). PDFs escaneados sin OCR pueden dar resultados limitados.
-</div>
-""", unsafe_allow_html=True)
+    st.markdown(f'<div class="limit-banner">⚠️ Máx. <strong>{MAX_FILES} archivos · {MAX_MB_EACH} MB</strong> por archivo · PDFs escaneados sin OCR pueden no funcionar.</div>', unsafe_allow_html=True)
 
     pdf_files = st.file_uploader(
         f"Sube tus apuntes (hasta {MAX_FILES} PDFs)",
-        type=["pdf"],
-        accept_multiple_files=True,
+        type=["pdf"], accept_multiple_files=True,
         label_visibility="collapsed",
     )
-
     if pdf_files and len(pdf_files) > MAX_FILES:
-        st.warning(f"Se usarán solo los primeros {MAX_FILES} archivos.")
+        st.warning(f"Se usarán solo los primeros {MAX_FILES}.")
         pdf_files = pdf_files[:MAX_FILES]
 
     pdf_key = "|".join(
@@ -274,65 +452,105 @@ with col1:
     ) if pdf_files else ""
 
     if pdf_files:
-        total_mb = sum(f.size for f in pdf_files) / (1024 * 1024)
+        total_mb = sum(f.size for f in pdf_files) / 1024 / 1024
         if total_mb > WARN_MB_TOTAL:
-            st.markdown(
-                f'<span class="tag-warn">⏳ {total_mb:.1f} MB total — indexación puede tardar 1-2 min</span>',
-                unsafe_allow_html=True,
-            )
+            st.markdown(f'<span class="tag-warn">⏳ {total_mb:.1f} MB — indexación puede tardar 1-2 min</span>', unsafe_allow_html=True)
 
         if st.session_state.pdf_key != pdf_key:
             with st.status("Indexando documentos…", expanded=True) as s:
-                all_parts = []
+                parts = []
                 for f in pdf_files:
                     st.write(f"📄 Leyendo {f.name}…")
-                    raw = f.read()          # read ONCE — bytes kept in memory
+                    raw = f.read()
                     txt = extract_text_from_pdf(raw)
                     if txt.strip():
-                        all_parts.append(txt)
-                        st.write(f"✅ {f.name} — {len(txt):,} caracteres extraídos")
+                        parts.append(txt)
+                        st.write(f"✅ {f.name} — {len(txt):,} caracteres")
                     else:
-                        st.write(f"⚠️ {f.name} — sin texto (¿escaneado?)")
-
-                combined = "\n\n".join(all_parts)
+                        st.write(f"⚠️ {f.name} — sin texto extraíble")
+                combined = "\n\n".join(parts)
                 if combined.strip():
-                    st.write("🔧 Construyendo índice vectorial…")
-                    st.session_state.faiss_index  = build_faiss_index(combined)
-                    st.session_state.pdf_key       = pdf_key
-                    st.session_state.result        = None
-                    st.session_state.transcription = None
-                    s.update(label="✅ Documentos indexados", state="complete", expanded=False)
+                    st.write("🔧 Construyendo índice vectorial FAISS…")
+                    st.session_state.faiss_index   = build_faiss_index(combined)
+                    st.session_state.pdf_key        = pdf_key
+                    st.session_state.result         = None
+                    st.session_state.transcription  = None
+                    st.session_state.summary_text   = ""
+                    st.session_state.quiz_questions = []
+                    st.session_state.quiz_answers   = {}
+                    st.session_state.quiz_feedback  = {}
+                    st.session_state.summary_audio  = None
+                    s.update(label="✅ Listo", state="complete", expanded=False)
                 else:
-                    s.update(label="❌ No se extrajo texto", state="error")
-                    st.error("Ningún PDF tenía texto extraíble.")
+                    s.update(label="❌ Sin texto extraíble", state="error")
 
-        if st.session_state.faiss_index is not None:
-            tags = "".join(f'<span class="tag-ok">✓ {f.name}</span>' for f in pdf_files)
-            st.markdown(tags, unsafe_allow_html=True)
+        if st.session_state.faiss_index:
+            st.markdown(
+                "".join(f'<span class="tag-ok">✓ {f.name}</span>' for f in pdf_files),
+                unsafe_allow_html=True,
+            )
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-    # ── Step 2: Question ──────────────────────────────────────────────────────
+    # ── Step 2: Question (recorder + upload + text) ───────────────────────────
     st.markdown('<div class="step-badge">🎙️ Paso 2 — Tu pregunta</div>', unsafe_allow_html=True)
 
-    audio_file = st.file_uploader(
-        "Nota de voz (mp3, wav, m4a, ogg, webm, flac) — opcional",
+    # Try audiorecorder widget (WhatsApp-style)
+    recorder_available = False
+    try:
+        from audiorecorder import audiorecorder
+        recorder_available = True
+    except ImportError:
+        pass
+
+    recorded_bytes = None
+    if recorder_available:
+        st.markdown("**Graba tu pregunta** (mantén el botón del micrófono):")
+        st.markdown('<div class="recorder-wrap">', unsafe_allow_html=True)
+        from audiorecorder import audiorecorder
+        audio_seg = audiorecorder(
+            start_prompt="⏺ Grabar",
+            stop_prompt="⏹ Detener",
+            pause_prompt="",
+            show_visualizer=True,
+            key="recorder",
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        if len(audio_seg) > 0:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                audio_seg.export(tmp.name, format="wav")
+                with open(tmp.name, "rb") as f:
+                    recorded_bytes = f.read()
+                os.unlink(tmp.name)
+            st.markdown('<span class="tag-ok">✓ Audio grabado</span>', unsafe_allow_html=True)
+        st.markdown("— o sube un archivo —")
+    else:
+        st.caption("💡 *Para grabación en vivo instala `audiorecorder` (ver requirements). Por ahora sube un archivo:*")
+
+    uploaded_audio = st.file_uploader(
+        "Nota de voz (mp3, wav, m4a, ogg, webm, flac)",
         type=["mp3", "wav", "m4a", "ogg", "webm", "flac"],
         label_visibility="collapsed",
     )
-    if audio_file:
-        st.markdown(f'<span class="tag-ok">✓ Audio: {audio_file.name}</span>', unsafe_allow_html=True)
+    if uploaded_audio:
+        st.markdown(f'<span class="tag-ok">✓ {uploaded_audio.name}</span>', unsafe_allow_html=True)
 
-    st.markdown(
-        '<p style="text-align:center;color:var(--muted);font-size:0.83rem;margin:0.6rem 0 0.4rem;">— o escribe tu pregunta directamente —</p>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<p style="text-align:center;color:var(--muted);font-size:0.82rem;margin:0.5rem 0;">— o escribe directamente —</p>', unsafe_allow_html=True)
     text_question = st.text_area(
         "Pregunta",
         placeholder="Ej: ¿Cuál es la idea principal del capítulo 2?",
-        height=90,
+        height=80,
         label_visibility="collapsed",
     )
+
+    # Determine what audio to use (recorded takes priority)
+    audio_bytes_to_use  = recorded_bytes or (uploaded_audio.read() if uploaded_audio else None)
+    audio_name_to_use   = "grabacion.wav" if recorded_bytes else (uploaded_audio.name if uploaded_audio else "")
+
+    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+    # ── TTS option ────────────────────────────────────────────────────────────
+    generate_audio = st.checkbox("🔊 Generar audio del resumen (Groq TTS)", value=True)
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
@@ -340,44 +558,41 @@ with col1:
     ready = (
         bool(groq_api_key)
         and st.session_state.faiss_index is not None
-        and (bool(audio_file) or bool(text_question.strip()))
+        and (bool(audio_bytes_to_use) or bool(text_question.strip()))
     )
 
     if not groq_api_key:
         st.caption("🔑 Ingresa tu Groq API Key arriba.")
     elif st.session_state.faiss_index is None:
         st.caption("📄 Sube al menos un PDF (Paso 1).")
-    elif not audio_file and not text_question.strip():
-        st.caption("🎙️ Sube un audio o escribe tu pregunta (Paso 2).")
+    elif not audio_bytes_to_use and not text_question.strip():
+        st.caption("🎙️ Graba, sube audio o escribe tu pregunta (Paso 2).")
 
     if st.button("🚀 Analizar y resumir", disabled=not ready):
         from groq import Groq
         client = Groq(api_key=groq_api_key)
 
-        with st.status("Procesando tu consulta…", expanded=True) as s:
-
-            # 1. Transcribe if audio
+        with st.status("Procesando…", expanded=True) as s:
+            # 1. Transcribe
             question = text_question.strip()
-            if audio_file:
-                st.write("🎙️ Transcribiendo nota de voz con Whisper…")
+            if audio_bytes_to_use:
+                st.write("🎙️ Transcribiendo con Whisper…")
                 try:
-                    question = transcribe_audio(audio_file.read(), audio_file.name, client)
+                    question = transcribe_audio(audio_bytes_to_use, audio_name_to_use, client)
                     st.session_state.transcription = question
-                    st.write(f"✅ Transcripción: *{question[:120]}{'…' if len(question)>120 else ''}*")
+                    st.write(f"✅ *{question[:100]}{'…' if len(question)>100 else ''}*")
                 except Exception as e:
                     s.update(label="❌ Error en transcripción", state="error")
-                    st.error(f"Whisper falló: {e}")
-                    st.stop()
+                    st.error(str(e)); st.stop()
             else:
                 st.session_state.transcription = None
 
             if not question:
                 s.update(label="❌ Sin pregunta", state="error")
-                st.error("No se detectó texto en el audio. Escribe tu pregunta manualmente.")
-                st.stop()
+                st.error("Sin texto para procesar."); st.stop()
 
-            # 2. RAG retrieval
-            st.write("🔍 Buscando fragmentos relevantes en el documento…")
+            # 2. RAG
+            st.write("🔍 Buscando fragmentos relevantes…")
             context = retrieve_context(st.session_state.faiss_index, question)
 
             # 3. LLM
@@ -385,71 +600,203 @@ with col1:
             try:
                 user_prompt = f"PREGUNTA DEL ALUMNO:\n{question}\n\nFRAGMENTOS DEL DOCUMENTO:\n{context}"
                 answer = ask_groq(client, SYSTEM_STUDY, user_prompt)
-                st.session_state.result = {"question": question, "answer": answer}
-                s.update(label="✅ ¡Listo! Revisa los resultados →", state="complete", expanded=False)
             except Exception as e:
-                s.update(label="❌ Error en LLM", state="error")
-                st.error(f"Groq LLM falló: {e}")
+                s.update(label="❌ Error LLM", state="error")
+                st.error(str(e)); st.stop()
+
+            summary, questions = parse_quiz(answer)
+            st.session_state.result         = {"question": question, "answer": answer}
+            st.session_state.summary_text   = summary
+            st.session_state.quiz_questions = questions
+            st.session_state.quiz_answers   = {}
+            st.session_state.quiz_feedback  = {}
+            st.session_state.summary_audio  = None
+
+            # 4. TTS (optional)
+            if generate_audio and summary:
+                st.write("🔊 Generando audio del resumen con Groq TTS…")
+                try:
+                    st.session_state.summary_audio = generate_tts_audio(client, summary)
+                    st.write("✅ Audio listo")
+                except Exception as e:
+                    st.write(f"⚠️ TTS no disponible: {e}")
+
+            s.update(label="✅ ¡Listo! Revisa los resultados →", state="complete", expanded=False)
 
 
 # ══ RIGHT: Results ════════════════════════════════════════════════════════════
-with col2:
+with col_out:
     st.markdown('<div class="step-badge">✨ Paso 3 — Resultados</div>', unsafe_allow_html=True)
 
-    if st.session_state.result:
-        result = st.session_state.result
-
-        if st.session_state.transcription:
-            st.markdown(
-                f'<div class="result-box"><h4>🎙️ Pregunta transcrita</h4>{st.session_state.transcription}</div>',
-                unsafe_allow_html=True,
-            )
-
-        answer_md = result["answer"]
-
-        if "### 📌 Resumen" in answer_md and "### ❓ Cuestionario rápido" in answer_md:
-            parts        = answer_md.split("### ❓ Cuestionario rápido")
-            summary_part = parts[0].replace("### 📌 Resumen", "").strip()
-            quiz_part    = parts[1].strip() if len(parts) > 1 else ""
-
-            st.markdown('<div class="result-box"><h4>📌 Resumen</h4>', unsafe_allow_html=True)
-            st.markdown(summary_part)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            if quiz_part:
-                st.markdown('<div class="result-box"><h4>❓ Cuestionario rápido</h4>', unsafe_allow_html=True)
-                st.markdown(quiz_part)
-                st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="result-box">{answer_md}</div>', unsafe_allow_html=True)
-
-        st.download_button(
-            label="⬇️ Descargar resultado (.txt)",
-            data=f"PREGUNTA:\n{result['question']}\n\n{result['answer']}",
-            file_name="quickstudy_resultado.txt",
-            mime="text/plain",
-        )
-
-    else:
+    if not st.session_state.result:
         st.markdown("""
 <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-            min-height:360px;opacity:0.35;text-align:center;gap:1rem;">
+            min-height:360px;opacity:0.32;text-align:center;gap:1rem;">
     <div style="font-size:3.5rem;">🎓</div>
-    <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;">
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;">
         Tus resultados aparecerán aquí
     </div>
-    <div style="font-size:0.85rem;max-width:240px;line-height:1.6;">
+    <div style="font-size:0.83rem;max-width:230px;line-height:1.6;">
         Completa los pasos 0 → 1 → 2 y presiona el botón.
     </div>
-</div>
-""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
+    else:
+        tab_sum, tab_quiz = st.tabs(["📌 Resumen", "❓ Cuestionario interactivo"])
 
-    # Stack info at bottom
+        # ── Tab 1: Summary ────────────────────────────────────────────────────
+        with tab_sum:
+            if st.session_state.transcription:
+                st.markdown(
+                    f'<div class="result-box"><h4>🎙️ Pregunta transcrita</h4>{st.session_state.transcription}</div>',
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown('<div class="result-box"><h4>📌 Resumen</h4>', unsafe_allow_html=True)
+            st.markdown(st.session_state.summary_text or st.session_state.result["answer"])
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # Audio player
+            if st.session_state.summary_audio:
+                play_audio_bytes(st.session_state.summary_audio, "🔊 Escuchar resumen")
+                st.download_button(
+                    "⬇️ Descargar audio (.wav)",
+                    data=st.session_state.summary_audio,
+                    file_name="resumen_audio.wav",
+                    mime="audio/wav",
+                )
+            elif not st.session_state.summary_audio and st.session_state.groq_api_key:
+                if st.button("🔊 Generar audio del resumen ahora"):
+                    from groq import Groq
+                    client = Groq(api_key=st.session_state.groq_api_key)
+                    with st.spinner("Generando audio…"):
+                        try:
+                            st.session_state.summary_audio = generate_tts_audio(
+                                client, st.session_state.summary_text
+                            )
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"TTS falló: {e}")
+
+            st.download_button(
+                "⬇️ Descargar resumen (.txt)",
+                data=f"PREGUNTA:\n{st.session_state.result['question']}\n\n{st.session_state.result['answer']}",
+                file_name="quickstudy_resumen.txt",
+                mime="text/plain",
+            )
+
+        # ── Tab 2: Interactive Quiz ───────────────────────────────────────────
+        with tab_quiz:
+            questions = st.session_state.quiz_questions
+
+            if not questions:
+                st.info("No se encontraron preguntas estructuradas. Intenta de nuevo.")
+            else:
+                # Score header
+                answered = len([k for k, v in st.session_state.quiz_feedback.items() if v])
+                total_q  = len(questions)
+                correct  = sum(
+                    1 for v in st.session_state.quiz_feedback.values()
+                    if v.get("verdict") == "CORRECTO"
+                )
+                partial  = sum(
+                    1 for v in st.session_state.quiz_feedback.values()
+                    if v.get("verdict") == "PARCIAL"
+                )
+
+                if answered > 0:
+                    score_pct = int((correct + 0.5 * partial) / total_q * 100)
+                    st.markdown(f"""
+<div style="margin-bottom:0.8rem;">
+    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">
+        <span>Progreso: {answered}/{total_q} respondidas</span>
+        <span>Puntuación: {score_pct}%</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar-fill" style="width:{score_pct}%;"></div>
+    </div>
+</div>""", unsafe_allow_html=True)
+
+                # Render each question
+                for q in questions:
+                    num  = q["num"]
+                    fb   = st.session_state.quiz_feedback.get(num, {})
+
+                    st.markdown(f"""
+<div class="quiz-card">
+    <div class="quiz-num">Pregunta {num} de {total_q}</div>
+    <div class="quiz-q">{q['question']}</div>
+</div>""", unsafe_allow_html=True)
+
+                    # If already graded, show answer + feedback locked
+                    if fb:
+                        verdict = fb.get("verdict", "")
+                        color_map = {"CORRECTO": "fb-correct", "PARCIAL": "fb-partial", "INCORRECTO": "fb-wrong"}
+                        icon_map  = {"CORRECTO": "✅", "PARCIAL": "🟡", "INCORRECTO": "❌"}
+                        css_class = color_map.get(verdict, "fb-partial")
+                        icon      = icon_map.get(verdict, "🟡")
+
+                        st.markdown(f"**Tu respuesta:** {st.session_state.quiz_answers.get(num, '')}")
+                        st.markdown(f"""
+<div class="{css_class}">
+    {icon} <strong>{verdict}</strong><br>
+    {fb.get('explanation','')}<br>
+    <em>💡 {fb.get('tip','')}</em>
+</div>""", unsafe_allow_html=True)
+                        st.markdown(f"*Respuesta de referencia: {q['answer']}*")
+
+                    else:
+                        # Input box
+                        user_ans = st.text_area(
+                            f"Tu respuesta #{num}",
+                            key=f"ans_{num}",
+                            placeholder="Escribe tu respuesta aquí…",
+                            height=75,
+                            label_visibility="collapsed",
+                        )
+
+                        if st.button(f"✔️ Verificar pregunta {num}", key=f"verify_{num}"):
+                            if not user_ans.strip():
+                                st.warning("Escribe algo antes de verificar.")
+                            else:
+                                with st.spinner("Calificando tu respuesta…"):
+                                    from groq import Groq
+                                    client = Groq(api_key=st.session_state.groq_api_key)
+                                    grade_prompt = (
+                                        f"PREGUNTA: {q['question']}\n"
+                                        f"RESPUESTA CORRECTA DE REFERENCIA: {q['answer']}\n"
+                                        f"RESPUESTA DEL ESTUDIANTE: {user_ans.strip()}"
+                                    )
+                                    raw_fb = ask_groq(client, SYSTEM_GRADER, grade_prompt)
+
+                                # Parse feedback
+                                import re
+                                verdict_m = re.search(r'VEREDICTO:\s*(CORRECTO|PARCIAL|INCORRECTO)', raw_fb, re.I)
+                                expl_m    = re.search(r'EXPLICACIÓN:\s*(.+?)(?=CONSEJO:|$)', raw_fb, re.S)
+                                tip_m     = re.search(r'CONSEJO:\s*(.+)', raw_fb)
+
+                                st.session_state.quiz_answers[num] = user_ans.strip()
+                                st.session_state.quiz_feedback[num] = {
+                                    "verdict":     verdict_m.group(1).upper() if verdict_m else "PARCIAL",
+                                    "explanation": expl_m.group(1).strip() if expl_m else raw_fb,
+                                    "tip":         tip_m.group(1).strip() if tip_m else "",
+                                }
+                                st.rerun()
+
+                    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+                # Reset quiz button
+                if st.session_state.quiz_feedback:
+                    if st.button("🔄 Reintentar cuestionario"):
+                        st.session_state.quiz_answers  = {}
+                        st.session_state.quiz_feedback = {}
+                        st.rerun()
+
+    # Footer
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
     st.markdown(
-        '<p style="font-size:0.75rem;color:var(--muted);text-align:center;">'
+        '<p style="font-size:0.72rem;color:var(--muted);text-align:center;">'
         '🎙️ Whisper large-v3-turbo &nbsp;·&nbsp; 🧠 LLaMA 3.3 70B &nbsp;·&nbsp; '
-        '📐 paraphrase-multilingual-MiniLM-L12-v2 &nbsp;·&nbsp; FAISS · LangChain · PyMuPDF'
+        '🔊 Groq TTS (PlayAI) &nbsp;·&nbsp; 📐 MiniLM-L12-v2 &nbsp;·&nbsp; FAISS · LangChain · PyMuPDF'
         '</p>',
         unsafe_allow_html=True,
     )
