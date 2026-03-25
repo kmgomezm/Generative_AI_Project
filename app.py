@@ -279,12 +279,13 @@ st.markdown("""
 # ── Sidebar: API Key ──────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### ⚙️ Configuración")
-    groq_api_key = st.text_input(
-        "Groq API Key",
-        type="password",
-        placeholder="gsk_...",
-        help="Obtén tu clave gratuita en console.groq.com",
-    )
+    groq_api_key = st.secrets.get("GROQ_API_KEY", "")
+    #groq_api_key = st.text_input(
+    #    "Groq API Key",
+    #    type="password",
+    #    placeholder="gsk_...",
+    #    help="Obtén tu clave gratuita en console.groq.com",
+    #)
     st.markdown("---")
     st.markdown("**Modelos usados**")
     st.markdown("🎙️ `whisper-large-v3-turbo`  \n🧠 `llama-3.3-70b-versatile`  \n📐 `paraphrase-multilingual-MiniLM-L12-v2`")
