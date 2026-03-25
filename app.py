@@ -186,7 +186,7 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
 
 def build_faiss_index(text: str):
     """Chunk text and build a FAISS index with sentence-transformers embeddings."""
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     from langchain_community.vectorstores import FAISS
     from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -279,13 +279,12 @@ st.markdown("""
 # ── Sidebar: API Key ──────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### ⚙️ Configuración")
-    groq_api_key = st.secrets.get("GROQ_API_KEY", "")
-    #groq_api_key = st.text_input(
-    #    "Groq API Key",
-    #    type="password",
-    #    placeholder="gsk_...",
-    #    help="Obtén tu clave gratuita en console.groq.com",
-    #)
+    groq_api_key = st.text_input(
+        "Groq API Key",
+        type="password",
+        placeholder="gsk_...",
+        help="Obtén tu clave gratuita en console.groq.com",
+    )
     st.markdown("---")
     st.markdown("**Modelos usados**")
     st.markdown("🎙️ `whisper-large-v3-turbo`  \n🧠 `llama-3.3-70b-versatile`  \n📐 `paraphrase-multilingual-MiniLM-L12-v2`")
