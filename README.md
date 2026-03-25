@@ -1,6 +1,6 @@
 # Generative_AI_Project
-Final workshop for Introduction to AI.
-/ Maestría en Ciencia de Datos · Docente: Jorge I. Padilla-Buriticá · Período 2026-1
+Maestría en Ciencia de Datos · Docente: Jorge I. Padilla-Buriticá · Período 2026-1
+*Final workshop for Introduction to AI.*
 
 **Integrantes:**
 - Ana Patricia Montes Pimienta
