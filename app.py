@@ -554,69 +554,69 @@ with col_in:
         st.caption("🎙️ Graba, sube audio o escribe tu pregunta (Paso 2).")
 
     if st.button("🚀 Analizar y resumir", disabled=not ready):
-    from groq import Groq
-    client = Groq(api_key=groq_api_key)
-
-    # --- Resetear estados previos ---
-    st.session_state.transcription = None
-    st.session_state.summary_audio = None  # Limpiar audio anterior
-
-    with st.status("Procesando…", expanded=True) as s:
-        # 1. Transcribe
-        question = text_question.strip()
-        if audio_bytes_to_use:
-            st.write("🎙️ Transcribiendo con Whisper…")
+        from groq import Groq
+        client = Groq(api_key=groq_api_key)
+    
+        # --- Resetear estados previos ---
+        st.session_state.transcription = None
+        st.session_state.summary_audio = None  # Limpiar audio anterior
+    
+        with st.status("Procesando…", expanded=True) as s:
+            # 1. Transcribe
+            question = text_question.strip()
+            if audio_bytes_to_use:
+                st.write("🎙️ Transcribiendo con Whisper…")
+                try:
+                    question = transcribe_audio(audio_bytes_to_use, audio_name_to_use, client)
+                    st.session_state.transcription = question
+                    st.write(f"✅ *{question[:100]}{'…' if len(question)>100 else ''}*")
+                except Exception as e:
+                    s.update(label="❌ Error en transcripción", state="error")
+                    st.error(str(e)); st.stop()
+            # else: ya está en None por el reset
+    
+            if not question:
+                s.update(label="❌ Sin pregunta", state="error")
+                st.error("Sin texto para procesar."); st.stop()
+    
+            # 2. RAG
+            st.write("🔍 Buscando fragmentos relevantes…")
+            context = retrieve_context(st.session_state.faiss_index, question)
+    
+            # Guardar para regenerar cuestionario después
+            st.session_state.last_question = question
+            st.session_state.last_context = context
+    
+            # 3. LLM para resumen y cuestionario inicial
+            st.write("🧠 Generando resumen y cuestionario con LLaMA 3.3 70B…")
             try:
-                question = transcribe_audio(audio_bytes_to_use, audio_name_to_use, client)
-                st.session_state.transcription = question
-                st.write(f"✅ *{question[:100]}{'…' if len(question)>100 else ''}*")
+                user_prompt = f"PREGUNTA DEL ALUMNO:\n{question}\n\nFRAGMENTOS DEL DOCUMENTO:\n{context}"
+                answer = ask_groq(client, SYSTEM_STUDY, user_prompt)
             except Exception as e:
-                s.update(label="❌ Error en transcripción", state="error")
+                s.update(label="❌ Error LLM", state="error")
                 st.error(str(e)); st.stop()
-        # else: ya está en None por el reset
-
-        if not question:
-            s.update(label="❌ Sin pregunta", state="error")
-            st.error("Sin texto para procesar."); st.stop()
-
-        # 2. RAG
-        st.write("🔍 Buscando fragmentos relevantes…")
-        context = retrieve_context(st.session_state.faiss_index, question)
-
-        # Guardar para regenerar cuestionario después
-        st.session_state.last_question = question
-        st.session_state.last_context = context
-
-        # 3. LLM para resumen y cuestionario inicial
-        st.write("🧠 Generando resumen y cuestionario con LLaMA 3.3 70B…")
-        try:
-            user_prompt = f"PREGUNTA DEL ALUMNO:\n{question}\n\nFRAGMENTOS DEL DOCUMENTO:\n{context}"
-            answer = ask_groq(client, SYSTEM_STUDY, user_prompt)
-        except Exception as e:
-            s.update(label="❌ Error LLM", state="error")
-            st.error(str(e)); st.stop()
-
-        summary, questions = parse_quiz(answer)
-        st.session_state.result         = {"question": question, "answer": answer}
-        st.session_state.summary_text   = summary
-        st.session_state.quiz_questions = questions
-        st.session_state.quiz_answers   = {}
-        st.session_state.quiz_feedback  = {}
-
-        # 4. TTS (optional)
-        if generate_audio and summary:
-            st.write("🔊 Generando audio del resumen con Groq TTS…")
-            try:
-                st.session_state.summary_audio = generate_tts_audio(client, summary)
-                st.write("✅ Audio listo")
-            except Exception as e:
-                st.write(f"⚠️ TTS no disponible: {e}")
-                # Dejamos summary_audio como None (no habrá reproductor)
-        else:
-            # Si no se generó automáticamente, aseguramos que no quede audio antiguo
-            st.session_state.summary_audio = None
-
-        s.update(label="✅ ¡Listo! Revisa los resultados →", state="complete", expanded=False)
+    
+            summary, questions = parse_quiz(answer)
+            st.session_state.result         = {"question": question, "answer": answer}
+            st.session_state.summary_text   = summary
+            st.session_state.quiz_questions = questions
+            st.session_state.quiz_answers   = {}
+            st.session_state.quiz_feedback  = {}
+    
+            # 4. TTS (optional)
+            if generate_audio and summary:
+                st.write("🔊 Generando audio del resumen con Groq TTS…")
+                try:
+                    st.session_state.summary_audio = generate_tts_audio(client, summary)
+                    st.write("✅ Audio listo")
+                except Exception as e:
+                    st.write(f"⚠️ TTS no disponible: {e}")
+                    # Dejamos summary_audio como None (no habrá reproductor)
+            else:
+                # Si no se generó automáticamente, aseguramos que no quede audio antiguo
+                st.session_state.summary_audio = None
+    
+            s.update(label="✅ ¡Listo! Revisa los resultados →", state="complete", expanded=False)
 
 
 # ══ RIGHT: Results ════════════════════════════════════════════════════════════
