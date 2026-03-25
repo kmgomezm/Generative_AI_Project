@@ -3,6 +3,7 @@ import tempfile
 import os
 import base64
 from pathlib import Path
+import re
 
 # ─── Page Config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -12,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ─── Custom CSS ───────────────────────────────────────────────────────────────
+# ─── Custom CSS (igual que antes, pero lo incluyo completo para evitar errores) ───
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
@@ -39,7 +40,6 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
 
-/* Hero */
 .hero { text-align:center; padding:1.8rem 1rem 0.8rem; }
 .hero-title {
     font-family:'Syne',sans-serif; font-size:2.6rem; font-weight:800;
@@ -49,7 +49,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
 }
 .hero-sub { font-size:0.95rem; color:var(--muted); font-weight:300; }
 
-/* Badges */
 .step-badge {
     display:inline-flex; align-items:center; gap:0.4rem;
     background:var(--surface2); border:1px solid var(--border);
@@ -59,7 +58,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     text-transform:uppercase; margin-bottom:0.6rem;
 }
 
-/* Inputs */
 .stFileUploader > div {
     background:var(--surface2) !important;
     border:1.5px dashed var(--accent) !important;
@@ -77,7 +75,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     box-shadow:0 0 0 2px rgba(124,106,247,0.25) !important;
 }
 
-/* Main button */
 .stButton > button {
     background:linear-gradient(135deg,#7c6af7,#a78bfa) !important;
     color:white !important; border:none !important;
@@ -88,7 +85,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
 }
 .stButton > button:disabled { opacity:0.35 !important; }
 
-/* Result boxes */
 .result-box {
     background:var(--surface2); border-left:3px solid var(--accent);
     border-radius:0 0.75rem 0.75rem 0;
@@ -100,7 +96,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     letter-spacing:0.08em; margin-bottom:0.45rem;
 }
 
-/* Quiz cards */
 .quiz-card {
     background:var(--surface); border:1px solid var(--border);
     border-radius:0.85rem; padding:1rem 1.2rem; margin-bottom:0.8rem;
@@ -112,7 +107,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
 }
 .quiz-q { font-weight:500; font-size:0.97rem; margin-bottom:0.6rem; }
 
-/* Feedback boxes */
 .fb-correct {
     background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.4);
     border-radius:0.6rem; padding:0.7rem 1rem; margin-top:0.5rem;
@@ -129,7 +123,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     color:#fde68a; font-size:0.88rem; line-height:1.6;
 }
 
-/* Score bar */
 .score-bar-wrap {
     background:var(--surface2); border-radius:0.5rem;
     height:10px; margin:0.5rem 0; overflow:hidden;
@@ -140,7 +133,6 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     transition:width 0.6s ease;
 }
 
-/* Tags */
 .tag-ok   { background:#1a3a2e;color:#34d399;border:1px solid #34d399;border-radius:0.4rem;padding:0.18rem 0.55rem;font-size:0.76rem;font-weight:600;display:inline-block;margin:0.12rem 0.15rem; }
 .tag-warn { background:#3a2e1a;color:#fbbf24;border:1px solid rgba(251,191,36,0.5);border-radius:0.4rem;padding:0.22rem 0.65rem;font-size:0.78rem;display:inline-block; }
 
@@ -161,14 +153,12 @@ h1,h2,h3 { font-family: 'Syne', sans-serif !important; }
     font-size:0.78rem;color:#34d399;margin-bottom:0.5rem;
 }
 
-/* Recorder widget area */
 .recorder-wrap {
     background:var(--surface2); border:1.5px solid var(--border);
     border-radius:0.85rem; padding:1rem; text-align:center;
     margin-bottom:0.75rem;
 }
 
-/* Tab styling */
 .stTabs [data-baseweb="tab-list"] {
     background:var(--surface2) !important;
     border-radius:0.7rem !important;
@@ -264,7 +254,7 @@ def generate_tts_audio(groq_client, text: str) -> bytes:
     clean = re.sub(r'\s+', ' ', clean).strip()
     response = groq_client.audio.speech.create(
         model="canopylabs/orpheus-v1-english",
-        voice="jessica",   # clear voice, suitable for study summaries
+        voice="diana",   # <--- CORRECCIÓN: voz válida
         input=clean[:4000],
         response_format="wav",
     )
@@ -317,6 +307,42 @@ def parse_quiz(answer_md: str) -> tuple[str, list[dict]]:
     return summary, questions
 
 
+def generate_quiz_from_context(client, question, context, num_questions=3):
+    """
+    Genera un cuestionario con `num_questions` preguntas y respuestas,
+    basado en la pregunta original y el contexto recuperado.
+    """
+    system_prompt = f"""Eres QuickStudy, un asistente de estudio experto y conciso.
+Respondes SIEMPRE en el mismo idioma de la pregunta del usuario.
+Recibes fragmentos de un documento y una pregunta del alumno.
+Tu respuesta debe contener EXACTAMENTE {num_questions} preguntas con sus respuestas.
+Usa el formato:
+
+### ❓ Cuestionario rápido
+**P1:** pregunta
+**R:** respuesta breve
+**P2:** pregunta
+**R:** respuesta breve
+... (hasta P{num_questions} y R{num_questions})
+
+Solo usa la información del contexto. Si no hay suficiente, indícalo.
+"""
+    user_prompt = f"PREGUNTA DEL ALUMNO:\n{question}\n\nFRAGMENTOS DEL DOCUMENTO:\n{context}"
+    answer = ask_groq(client, system_prompt, user_prompt)
+    # Extraer preguntas
+    questions = []
+    blocks = re.split(r'\*\*P\d+:\*\*', answer)
+    for i, block in enumerate(blocks[1:], start=1):
+        if i > num_questions:
+            break
+        sub = re.split(r'\*\*R:\*\*', block, maxsplit=1)
+        q_text = sub[0].strip().rstrip(':').strip()
+        a_text = sub[1].strip().split('\n')[0].strip() if len(sub) > 1 else ""
+        if q_text:
+            questions.append({"num": i, "question": q_text, "answer": a_text})
+    return questions
+
+
 SYSTEM_STUDY = """Eres QuickStudy, un asistente de estudio experto y conciso.
 Respondes SIEMPRE en el mismo idioma de la pregunta del usuario.
 Recibes fragmentos de un documento y una pregunta del alumno.
@@ -365,9 +391,11 @@ for _k, _v in [
     ("groq_api_key",    ""),
     ("summary_text",    ""),
     ("quiz_questions",  []),
-    ("quiz_answers",    {}),    # {q_num: user_answer_text}
-    ("quiz_feedback",   {}),    # {q_num: {verdict, explanation, tip}}
-    ("summary_audio",   None),  # bytes
+    ("quiz_answers",    {}),
+    ("quiz_feedback",   {}),
+    ("summary_audio",   None),
+    ("last_question",   ""),
+    ("last_context",    ""),
 ]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
@@ -452,6 +480,8 @@ with col_in:
                     st.session_state.quiz_answers   = {}
                     st.session_state.quiz_feedback  = {}
                     st.session_state.summary_audio  = None
+                    st.session_state.last_question  = ""
+                    st.session_state.last_context   = ""
                     s.update(label="✅ Listo", state="complete", expanded=False)
                 else:
                     s.update(label="❌ Sin texto extraíble", state="error")
@@ -550,7 +580,11 @@ with col_in:
             st.write("🔍 Buscando fragmentos relevantes…")
             context = retrieve_context(st.session_state.faiss_index, question)
 
-            # 3. LLM
+            # Guardar para regenerar cuestionario después
+            st.session_state.last_question = question
+            st.session_state.last_context = context
+
+            # 3. LLM para resumen y cuestionario inicial
             st.write("🧠 Generando resumen y cuestionario con LLaMA 3.3 70B…")
             try:
                 user_prompt = f"PREGUNTA DEL ALUMNO:\n{question}\n\nFRAGMENTOS DEL DOCUMENTO:\n{context}"
@@ -639,12 +673,41 @@ with col_out:
                 mime="text/plain",
             )
 
-        # ── Tab 2: Interactive Quiz ───────────────────────────────────────────
+        # ── Tab 2: Interactive Quiz (con regeneración) ─────────────────────────
         with tab_quiz:
+            # Si existe last_question y last_context, mostramos controles para regenerar
+            if st.session_state.last_question and st.session_state.last_context:
+                with st.expander("🎲 Opciones del cuestionario", expanded=False):
+                    num_q = st.slider(
+                        "Número de preguntas",
+                        min_value=1, max_value=5, value=len(st.session_state.quiz_questions) or 3,
+                        key="num_questions_slider"
+                    )
+                    if st.button("🔄 Generar nuevo cuestionario"):
+                        from groq import Groq
+                        client = Groq(api_key=st.session_state.groq_api_key)
+                        with st.spinner("Generando nuevo conjunto de preguntas..."):
+                            new_questions = generate_quiz_from_context(
+                                client,
+                                st.session_state.last_question,
+                                st.session_state.last_context,
+                                num_q
+                            )
+                            if new_questions:
+                                st.session_state.quiz_questions = new_questions
+                                st.session_state.quiz_answers = {}
+                                st.session_state.quiz_feedback = {}
+                                st.success(f"✅ Nuevo cuestionario generado con {len(new_questions)} preguntas.")
+                                st.rerun()
+                            else:
+                                st.error("No se pudieron generar preguntas. Intenta de nuevo.")
+                st.markdown("---")
+
+            # Mostrar preguntas actuales (pueden ser las iniciales o las regeneradas)
             questions = st.session_state.quiz_questions
 
             if not questions:
-                st.info("No se encontraron preguntas estructuradas. Intenta de nuevo.")
+                st.info("No hay preguntas disponibles. Genera el resumen primero o presiona 'Generar nuevo cuestionario'.")
             else:
                 # Score header
                 answered = len([k for k, v in st.session_state.quiz_feedback.items() if v])
@@ -724,7 +787,6 @@ with col_out:
                                     raw_fb = ask_groq(client, SYSTEM_GRADER, grade_prompt)
 
                                 # Parse feedback
-                                import re
                                 verdict_m = re.search(r'VEREDICTO:\s*(CORRECTO|PARCIAL|INCORRECTO)', raw_fb, re.I)
                                 expl_m    = re.search(r'EXPLICACIÓN:\s*(.+?)(?=CONSEJO:|$)', raw_fb, re.S)
                                 tip_m     = re.search(r'CONSEJO:\s*(.+)', raw_fb)
