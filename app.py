@@ -304,7 +304,7 @@ def parse_quiz(answer_md: str) -> tuple[str, list[dict]]:
 
     # Parse P1/R1 pairs robustly
     import re
-    # Match **P1:** ... **R:** ...
+    # Match **P1:** ... **R:**
     blocks = re.split(r'\*\*P\d+:\*\*', quiz_raw)
     for i, block in enumerate(blocks[1:], start=1):
         # Split on **R:**
@@ -467,30 +467,15 @@ with col_in:
     # ── Step 2: Question (recorder + upload + text) ───────────────────────────
     st.markdown('<div class="step-badge">🎙️ Paso 2 — Tu pregunta</div>', unsafe_allow_html=True)
 
-    # ── Recorder (audio-recorder-streamlit — no ffmpeg needed, pure JS) ─────────
+    # --- Audio input (record or upload) ---
     recorded_bytes = None
-    try:
-        from audio_recorder_streamlit import audio_recorder
-        st.markdown("**🎙️ Graba tu pregunta** — presiona el micrófono para iniciar y de nuevo para detener:")
-        st.markdown('<div class="recorder-wrap">', unsafe_allow_html=True)
-        rec = audio_recorder(
-            text="",
-            recording_color="#7c6af7",
-            neutral_color="#a78bfa",
-            icon_name="microphone",
-            icon_size="2x",
-            pause_threshold=3.0,
-            key="mic_recorder",
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-        if rec is not None and len(rec) > 0:
-            recorded_bytes = rec
-            st.audio(recorded_bytes, format="audio/wav")
-            st.markdown('<span class="tag-ok">✓ Audio listo para enviar</span>', unsafe_allow_html=True)
-    except Exception as e:
-        st.caption(f"⚠️ Grabación en vivo no disponible ({e}). Sube un archivo:")
-    st.markdown("— o sube un archivo de audio —")
+    rec_audio = st.audio_input("🎙️ Graba tu pregunta (o sube un archivo)")
+    if rec_audio:
+        recorded_bytes = rec_audio.getvalue()
+        st.audio(recorded_bytes, format="audio/wav")
+        st.markdown('<span class="tag-ok">✓ Audio listo para enviar</span>', unsafe_allow_html=True)
 
+    st.markdown("— o sube un archivo de audio —")
     uploaded_audio = st.file_uploader(
         "Nota de voz (mp3, wav, m4a, ogg, webm, flac)",
         type=["mp3", "wav", "m4a", "ogg", "webm", "flac"],
@@ -508,8 +493,14 @@ with col_in:
     )
 
     # Determine what audio to use (recorded takes priority)
-    audio_bytes_to_use  = recorded_bytes or (uploaded_audio.read() if uploaded_audio else None)
-    audio_name_to_use   = "grabacion.wav" if recorded_bytes else (uploaded_audio.name if uploaded_audio else "")
+    audio_bytes_to_use = None
+    audio_name_to_use = ""
+    if recorded_bytes:
+        audio_bytes_to_use = recorded_bytes
+        audio_name_to_use = rec_audio.name  # default name like "audio.wav"
+    elif uploaded_audio:
+        audio_bytes_to_use = uploaded_audio.read()
+        audio_name_to_use = uploaded_audio.name
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
