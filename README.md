@@ -9,9 +9,9 @@ Maestría en Ciencia de Datos · Docente: Jorge I. Padilla-Buriticá · Período
 
 **Nota**: El modelo gratuito de Groq de Text to Speech tiene un límite de tokens, se acaba pronto y se resetea a la hora.
 
-# 🎓 Generative AI Project – QuickStudy Assistant
+# Generative AI Project – QuickStudy Assistant
 
-## 📌 Descripción
+## Descripción
 
 **QuickStudy Assistant** es una aplicación web desarrollada con **Streamlit** que utiliza **Inteligencia Artificial Generativa** para apoyar procesos de estudio.  
 
@@ -21,7 +21,7 @@ El proyecto implementa una arquitectura de **Retrieval‑Augmented Generation (R
 
 ---
 
-## 🎯 Objetivo
+## Objetivo
 
 Demostrar el uso práctico de IA generativa para:
 - Comprender documentos extensos
@@ -33,20 +33,20 @@ Demostrar el uso práctico de IA generativa para:
 
 ---
 
-## 🧠 Funcionalidades principales
+## Funcionalidades principales
 
-- 📄 **Carga de PDFs** y extracción de texto
-- 📐 **Indexación vectorial** con FAISS y embeddings multilingües
-- 🎙️ **Preguntas por voz** con transcripción automática (Whisper)
-- 🔍 **Búsqueda semántica (RAG)** sobre los documentos
-- 🧠 **Generación de resúmenes y cuestionarios** con LLM
-- ✅ **Evaluación automática** de respuestas (Correcto / Parcial / Incorrecto)
-- 🔊 **Text‑to‑Speech** para escuchar el resumen
-- 📥 Descarga de resultados en texto y audio
+- **Carga de PDFs** y extracción de texto
+- **Indexación vectorial** con FAISS y embeddings multilingües
+- **Preguntas por voz** con transcripción automática (Whisper)
+- **Búsqueda semántica (RAG)** sobre los documentos
+- **Generación de resúmenes y cuestionarios** con LLM
+- **Evaluación automática** de respuestas (Correcto / Parcial / Incorrecto)
+- **Text‑to‑Speech** para escuchar el resumen
+- Descarga de resultados en texto y audio
 
 ---
 
-## 🧰 Tecnologías
+## Tecnologías
 
 - Python
 - Streamlit
@@ -61,7 +61,7 @@ Demostrar el uso práctico de IA generativa para:
 
 ---
 
-## 👥 Público objetivo
+## Público objetivo
 
 - Estudiantes
 - Docentes
@@ -70,7 +70,7 @@ Demostrar el uso práctico de IA generativa para:
 
 ---
 
-## ⚠️ Consideraciones
+## Consideraciones
 
 - Requiere **Groq API Key**
 - El contenido se envía al proveedor del modelo durante la inferencia
@@ -79,15 +79,15 @@ Demostrar el uso práctico de IA generativa para:
 
 ---
 
-## ✅ Estado del proyecto
+## Estado del proyecto
 
-- ✔️ Funcional
-- ✔️ Modular y extensible
-- 🚧 Uso académico / demostrativo
+- Funcional
+- Modular y extensible
+- Uso académico / demostrativo
 
 ---
 
-## 📌 Conclusión
+## Conclusión
 
 **QuickStudy Assistant** muestra cómo la IA generativa y el enfoque RAG pueden transformar documentos estáticos en herramientas interactivas de aprendizaje, integrando texto, voz, evaluación y retroalimentación automática en una sola aplicación.
 
